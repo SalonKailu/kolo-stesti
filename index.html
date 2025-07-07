@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kolo štěstí - Získejte slevu!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        .wheel-container {
+            position: relative;
+            margin: 20px 0;
+            display: inline-block;
+        }
+        .wheel {
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            border: 8px solid #FFD700;
+            position: relative;
+            transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1);
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            overflow: hidden; 
+        }
+        .pointer {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 50px solid #c7584f;
+            z-index: 10;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        .spin-button {
+            background: linear-gradient(45deg, #faa4a6, #c53030);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4);
+            transition: all 0.3s ease;
+        }
+        .spin-button:hover:not(:disabled) {
+            background: linear-gradient(45deg, #c53030, #9c2626);
+            transform: translateY(-2px);
+        }
+        .spin-button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 25px;
+            background: #f5f1e9;
+            color: #3d3d3d;
+            border-radius: 15px;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e0d9ce;
+        }
+        
+        .result.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .code-box {
+            background: #e9e2d5;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px dashed #d4a574;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+            color: #2c2c2c;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .code-box:hover {
+            background: #e0d5c8;
+            border-color: #c7984a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .result a {
+            background: #2c2c2c;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1.3em;
+            display: inline-block;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            border: none;
+        }
+        .result a:hover {
+            background: #faa4a6;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .spots-counter {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0d9ce;
+        }
+        #spots-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .spots-text-normal { color: #2c2c2c; }
+        .spots-text-warning { color: #d4a574; font-weight: 600; }
+        .spots-text-urgent { color: #c7584f; font-weight: 700; }
+
+        @media (max-width: 480px) {
+            .wheel { width: 280px; height: 280px; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="intro-text" style="margin-bottom: 40px;">
+            <h2 style="color: #666; font-size: 1.1em;">
+                <span style="color: #000000; font-size: 14pt;">Vytočte si Vaši slevu 🍀</span>
+            </h2>
+        </div>
+        
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <div class="wheel" id="wheel">
+                <svg width="100%" height="100%" viewBox="-1 -1 2 2" style="transform: rotate(-0.25turn); border-radius: 50%;">
+                    <defs>
+                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="0.02" result="coloredBlur"></feGaussianBlur>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"></feMergeNode>
+                                <feMergeNode in="SourceGraphic"></feMergeNode>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <g id="segments"></g>
+                    <circle cx="0" cy="0" r="0.15" fill="#FFD700" stroke="#FFA500" stroke-width="0.02" filter="url(#glow)"></circle>
+                    <text x="0" y="0.02" fill="#333" font-size="0.08" font-weight="bold" text-anchor="middle">SPIN</text>
+                </svg>
+            </div>
+        </div>
+        
+        <button class="spin-button" id="spinButton" onclick="spin()">Roztočit kolo!</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        let isSpinning = false;
+        let hasSpun = false;
+
+        const segmentData = [
+            { value: 0, color: '#A0AEC0', text: '😢' }, { value: 40, color: '#FFD700', text: '40%' },
+            { value: 20, color: '#FC8181', text: '20%' }, { value: 30, color: '#68D391', text: '30%' },
+            { value: 0, color: '#A0AEC0', text: '😢' }, { value: 30, color: '#68D391', text: '30%' },
+            { value: 20, color: '#FC8181', text: '20%' }, { value: 40, color: '#FFD700', text: '40%' },
+            { value: 20, color: '#FC8181', text: '20%' }, { value: 10, color: '#CBD5E0', text: '10%' },
+            { value: 30, color: '#68D391', text: '30%' }, { value: 20, color: '#FC8181', text: '20%' }
+        ];
+
+        function getCoordinatesForPercent(p) {
+            const a = (p * 2 * Math.PI) + (Math.PI / 2);
+            return [Math.cos(a), Math.sin(a)];
+        }
+        
+        function createSegmentPath(s, e) {
+            const [sx, sy] = getCoordinatesForPercent(s);
+            const [ex, ey] = getCoordinatesForPercent(e);
+            const f = e - s > 0.5 ? 1 : 0;
+            return `M 0 0 L ${sx} ${sy} A 1 1 0 ${f} 1 ${ex} ${ey} Z`;
+        }
+        
+        function generateSegments() {
+            const c = document.getElementById('segments');
+            const t = segmentData.length;
+            const a = 360 / t;
+            c.innerHTML = '';
+            
+            segmentData.forEach((s, i) => {
+                const sp = i / t;
+                const ep = (i + 1) / t;
+                const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                p.setAttribute('d', createSegmentPath(sp, ep));
+                p.setAttribute('fill', s.color);
+                p.setAttribute('stroke', 'white');
+                p.setAttribute('stroke-width', '0.01');
+                if (s.color === '#FFD700') p.setAttribute('filter', 'url(#glow)');
+                c.appendChild(p);
+                
+                const m = (sp + ep) * Math.PI;
+                const r = 0.6;
+                const tx = Math.cos(m + Math.PI / 2) * r;
+                const ty = Math.sin(m + Math.PI / 2) * r;
+                const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                txt.setAttribute('x', tx);
+                txt.setAttribute('y', ty + 0.015);
+                txt.setAttribute('text-anchor', 'middle');
+                txt.setAttribute('font-size', s.value === 40 ? '0.11' : '0.09');
+                txt.setAttribute('font-weight', 'bold');
+                
+                if (s.color === '#A0AEC0' || s.color === '#CBD5E0' || s.color === '#68D391') {
+                    txt.setAttribute('fill', '#333');
+                } else {
+                    txt.setAttribute('fill', 'white');
+                }
+                
+                const rd = (i * a) + (a / 2) + 90;
+                txt.setAttribute('transform', `rotate(${rd}, ${tx}, ${ty})`);
+                if (s.value === 40) {
+                    txt.setAttribute('filter', 'url(#glow)');
+                    txt.setAttribute('font-weight', '900');
+                }
+                txt.textContent = s.text;
+                c.appendChild(txt);
+            });
+        }
+
+        window.onload = function() {
+            generateSegments();
+            const spunData = getStoredData();
+            if (spunData) {
+                hasSpun = true;
+                document.getElementById('spinButton').disabled = true;
+                document.getElementById('spinButton').innerHTML = '🎁 Vaši slevu už máte!';
+                showResult(spunData.discount, spunData.code);
+            }
+        };
+
+        function getStoredData() {
+            try {
+                return JSON.parse(localStorage.getItem('wheel_spun_data') || 'null');
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        function setStoredData(data) {
+            try {
+                localStorage.setItem('wheel_spun_data', JSON.stringify(data));
+            } catch (e) {
+                console.log('Storage not available');
+            }
+        }
+        
+        const codes = {
+            20: ['LETO20-A1', 'LETO20-B2', 'LETO20-C3'],
+            30: ['LETO30-X1', 'LETO30-Y2'],
+            40: ['LETO40-MEGA1']
+        };
+
+        function spin() {
+            if (isSpinning || hasSpun) return;
+            isSpinning = true;
+            const button = document.getElementById('spinButton');
+            const wheel = document.getElementById('wheel');
+            button.disabled = true;
+            button.innerHTML = '🌀 Točím...';
+            
+            // POUZE výherní segmenty (20%, 30%, 40%)
+            const winningIndexes = [];
+            segmentData.forEach((segment, index) => {
+                if (segment.value >= 20) { // Jen 20% a víc
+                    winningIndexes.push(index);
+                }
+            });
+            
+            const selectedIndex = winningIndexes[Math.floor(Math.random() * winningIndexes.length)];
+            const selectedSegment = segmentData[selectedIndex];
+            const availableCodes = codes[selectedSegment.value];
+            const selectedCode = availableCodes[Math.floor(Math.random() * availableCodes.length)];
+            
+            setStoredData({ discount: selectedSegment.value, code: selectedCode });
+            
+            const totalSegments = segmentData.length;
+            const segmentAngle = 360 / totalSegments;
+            const baseRotations = 8 * 360;
+            const targetAngle = 270 - ((selectedIndex * segmentAngle) + (segmentAngle / 2));
+            const finalRotation = baseRotations + targetAngle;
+
+            wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+            setTimeout(() => {
+                showResult(selectedSegment.value, selectedCode);
+                button.innerHTML = '🎉 Dokončeno!';
+                hasSpun = true;
+                isSpinning = false;
+            }, 5100);
+        }
+        
+        function updateAvailableSpots() {
+            const timeline = [
+                { date: '2025-07-06', spots: 20 }, { date: '2025-07-12', spots: 18 },
+                { date: '2025-07-15', spots: 16 }, { date: '2025-07-18', spots: 14 },
+                { date: '2025-07-20', spots: 12 }, { date: '2025-07-26', spots: 10 },
+                { date: '2025-08-01', spots: 8 }, { date: '2025-08-06', spots: 6 },
+                { date: '2025-08-09', spots: 4 }, { date: '2025-08-11', spots: 3 },
+                { date: '2025-08-21', spots: 2 }, { date: '2025-08-26', spots: 1 },
+                { date: '2025-08-31', spots: 0 }
+            ];
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let currentSpots = 20;
+            for (let milestone of timeline) {
+                if (today >= new Date(milestone.date)) {
+                    currentSpots = milestone.spots;
+                }
+            }
+            
+            const textElement = document.getElementById('spots-text');
+            if (!textElement) return;
+            
+            if (currentSpots === 0) {
+                textElement.textContent = '❌ BOHUŽEL VYPRODÁNO';
+                textElement.className = 'spots-text-urgent';
+            } else if (currentSpots === 1) {
+                textElement.textContent = '🚨 POSLEDNÍ VOLNÝ TERMÍN!';
+                textElement.className = 'spots-text-urgent';
+            } else if (currentSpots <= 4) {
+                textElement.textContent = `🔥 POSLEDNÍ ${currentSpots} TERMÍNY!`;
+                textElement.className = 'spots-text-urgent';
+            } else if (currentSpots <= 9) {
+                textElement.textContent = `⚠️ Pozor! Pouze ${currentSpots} volných termínů`;
+                textElement.className = 'spots-text-warning';
+            } else {
+                textElement.textContent = `Zbývá ${currentSpots} volných termínů`;
+                textElement.className = 'spots-text-normal';
+            }
+        }
+
+        // Kopírování kódu do schránky
+        function copyCodeToClipboard(code) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showCopyFeedback();
+                }).catch(err => {
+                    console.error('Chyba při kopírování:', err);
+                    fallbackCopyTextToClipboard(code);
+                });
+            } else {
+                fallbackCopyTextToClipboard(code);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopyFeedback();
+            } catch (err) {
+                console.error('Fallback kopírování selhalo:', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function showCopyFeedback() {
+            const codeBox = document.querySelector('.code-box');
+            const originalHTML = codeBox.innerHTML;
+            
+            codeBox.innerHTML = '<div style="color: #28a745; font-weight: bold;">✅ ZKOPÍROVÁNO!</div>';
+            codeBox.style.background = '#d4edda';
+            codeBox.style.borderColor = '#28a745';
+            
+            setTimeout(() => {
+                codeBox.innerHTML = originalHTML;
+                codeBox.style.background = '#e9e2d5';
+                codeBox.style.borderColor = '#d4a574';
+            }, 2000);
+        }
+
+        function showResult(discount, code) {
+            const result = document.getElementById('result');
+            const emojis = { 10: '🙂', 20: '🎊', 30: '🎉', 40: '🏆' };
+            const messages = { 10: 'Je tam!', 20: 'Povedlo se!', 30: 'To je paráda!', 40: 'Neuvěřitelné!' };
+            
+            result.innerHTML = `
+                ${emojis[discount]} <strong>${messages[discount]}</strong> ${emojis[discount]}<br>
+                <div style="font-size: 1.8em; margin: 15px 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
+                    Získáváte <strong>${discount}% SLEVU</strong>!
+                </div>
+                <div class="code-box" onclick="copyCodeToClipboard('${code}')" title="Klikněte pro zkopírování">
+                    <div style="font-size: 0.9em; margin-bottom: 8px;">Váš slevový kód:</div>
+                    <strong>${code}</strong>
+                    <div style="font-size: 0.7em; margin-top: 5px; opacity: 0.7;">📋 Klikněte pro zkopírování</div>
+                </div>
+                <div style="font-size: 0.9em; opacity: 0.9; text-align: center;">
+                    🎯 Zadejte kód při rezervaci<br>
+                    <a href="https://booking.reservanto.cz/Modal/?id=14785&seg=3&rId=40431&mode=spr" target="_blank">
+                        📅 REZERVOVAT NYNÍ →
+                    </a>
+                </div>
+                <div class="spots-counter">
+                    <span id="spots-text"></span>
+                </div>
+            `;
+            
+            result.classList.add('show');
+            updateAvailableSpots();
+        }
+    </script>
+</body>
+</html>
