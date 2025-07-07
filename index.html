@@ -166,34 +166,29 @@
         .spots-text-urgent { color: #c7584f; font-weight: 700; }
 
         /* Desktop layout - od 768px výše */
-        @media (min-width: 768px) {
-            .main-container {
-                max-width: 1000px;
-                display: flex;
-                align-items: flex-start;
-                gap: 40px;
-                text-align: left;
-            }
-            
-            .wheel-section {
-                flex: 1;
-                text-align: center;
-            }
-            
-            .result-section {
-                flex: 1;
-                min-height: 400px;
-            }
-            
-            .intro-text {
-                text-align: center;
-                width: 100%;
-                margin-bottom: 30px;
-            }
-            
-            .result {
-                margin-top: 0;
-            }
+       @media (min-width: 768px) {
+    .main-container {
+        max-width: 1000px;
+        display: flex;
+        align-items: flex-start;
+        gap: 40px;
+        text-align: left;
+    }
+    
+    .wheel-section {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .result-section {
+        flex: 1;
+        min-height: 400px;
+    }
+    
+    .intro-text {
+        text-align: center;
+        margin-bottom: 20px;
+    }
         }
 
         /* Mobilní zařízení */
@@ -294,7 +289,7 @@
                 txt.setAttribute('font-size', s.value === 40 ? '0.11' : '0.09');
                 txt.setAttribute('font-weight', 'bold');
                 
-                if (s.color === '#A0AEC0' || s.color === '#CBD5E0' || s.color === '#68D391') {
+                if (s.color === '#A0AEC0' || s.color === '#CBD5E0' || s.color === '#68D391' || s.color === '#FFD700') {
                     txt.setAttribute('fill', '#333');
                 } else {
                     txt.setAttribute('fill', 'white');
